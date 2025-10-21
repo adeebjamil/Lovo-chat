@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 function NotificationBell({ socket, token }) {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -85,7 +87,7 @@ function NotificationBell({ socket, token }) {
         return;
       }
       
-      const response = await fetch('http://localhost:3000/api/notifications', {
+      const response = await fetch(`${API_URL}/api/notifications`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -112,7 +114,7 @@ function NotificationBell({ socket, token }) {
         return;
       }
       
-      const response = await fetch('http://localhost:3000/api/notifications/unread/count', {
+      const response = await fetch(`${API_URL}/api/notifications/unread/count`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -129,8 +131,8 @@ function NotificationBell({ socket, token }) {
 
   const markAsRead = async (notificationId) => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:3000/api/notifications/${notificationId}/read`, {
+      const token = localStorage.getItem('chatToken');
+      const response = await fetch(`${API_URL}/api/notifications/${notificationId}/read`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -151,8 +153,8 @@ function NotificationBell({ socket, token }) {
 
   const markAllAsRead = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/notifications/read-all', {
+      const token = localStorage.getItem('chatToken');
+      const response = await fetch(`${API_URL}/api/notifications/read-all`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`

@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 function NotificationSettings() {
   const [settings, setSettings] = useState({
     pushEnabled: true,
@@ -21,8 +23,8 @@ function NotificationSettings() {
 
   const loadSettings = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/auth/profile', {
+      const token = localStorage.getItem('chatToken');
+      const response = await fetch(`${API_URL}/api/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -42,8 +44,8 @@ function NotificationSettings() {
   const saveSettings = async (newSettings) => {
     try {
       setIsSaving(true);
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:3000/api/notifications/settings', {
+      const token = localStorage.getItem('chatToken');
+      const response = await fetch(`${API_URL}/api/notifications/settings`, {
         method: 'PATCH',
         headers: {
           'Authorization': `Bearer ${token}`,

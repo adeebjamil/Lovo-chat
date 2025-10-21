@@ -18,7 +18,8 @@ import MessageContextMenu from './MessageContextMenu';
 import UserProfileCard from './UserProfileCard';
 import { MessageSkeleton } from './SkeletonLoader';
 
-const SERVER_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000';
+const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 // Configure marked for safe rendering
 marked.setOptions({
@@ -66,7 +67,7 @@ export default function ChatRoom({ user, token, onLogout }) {
   const messageRefs = useRef({});
   const hoverTimeoutRef = useRef(null);
 
-  const { socket, isConnected, connectionError, emit } = useSocket(SERVER_URL, token);
+  const { socket, isConnected, connectionError, emit } = useSocket(WS_URL, token);
 
   // Auto-scroll to bottom when new messages arrive
   const scrollToBottom = () => {
@@ -631,7 +632,7 @@ export default function ChatRoom({ user, token, onLogout }) {
       formData.append('file', file);
       formData.append('room', currentRoom);
 
-      const response = await fetch(`${SERVER_URL}/api/upload`, {
+      const response = await fetch(`${API_URL}/api/upload`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -645,10 +646,10 @@ export default function ChatRoom({ user, token, onLogout }) {
 
       const data = await response.json();
       
-      // Add message to local state
-      setMessages(prev => [...prev, data.message]);
+      // DON'T add message to local state - let socket handle it
+      // setMessages(prev => [...prev, data.message]); // REMOVED to prevent duplication
 
-      // Broadcast to room via socket
+      // Broadcast to room via socket - server will send it back to all clients
       emit('message:send', {
         content: data.message.content,
         room: currentRoom,

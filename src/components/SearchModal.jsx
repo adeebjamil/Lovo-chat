@@ -1,5 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 function SearchModal({ isOpen, onClose, currentRoom, onMessageClick }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [results, setResults] = useState([]);
@@ -87,7 +89,7 @@ function SearchModal({ isOpen, onClose, currentRoom, onMessageClick }) {
       params.append('limit', '50');
       params.append('skip', skipCount.toString());
 
-      const response = await fetch(`http://localhost:3000/api/messages/search?${params}`, {
+      const response = await fetch(`${API_URL}/api/messages/search?${params}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }

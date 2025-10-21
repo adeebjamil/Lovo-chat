@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import NotificationSettings from './NotificationSettings';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
+
 export default function AccountSettings({ user, token, onClose, onLogout }) {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -11,7 +13,7 @@ export default function AccountSettings({ user, token, onClose, onLogout }) {
     setError('');
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/account', {
+      const response = await fetch(`${API_URL}/api/auth/account`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
