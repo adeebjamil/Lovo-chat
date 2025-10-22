@@ -54,7 +54,7 @@ export default function ChatRoom({ user, token, onLogout }) {
   // Phase 3.7: Enhanced UI/UX states
   const [isDarkMode, toggleDarkMode] = useDarkMode();
   const [contextMenu, setContextMenu] = useState(null);
-  const [showEmojiPicker, setShowEmojiPicker] = useState(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [hoveredUser, setHoveredUser] = useState(null);
   const [profileCardPosition, setProfileCardPosition] = useState({ x: 0, y: 0 });
   
@@ -218,7 +218,7 @@ export default function ChatRoom({ user, token, onLogout }) {
       setRoomInfo(prev => ({ ...prev, userCount: Math.max(0, prev.userCount - 1) }));
     });
 
-    // Message received
+    // Message received from others
     socket.on('message:received', (message) => {
       setMessages(prev => [...prev, message]);
       
@@ -231,6 +231,11 @@ export default function ChatRoom({ user, token, onLogout }) {
           });
         }, 1000); // Wait 1 second before marking as read
       }
+    });
+    
+    // Message sent confirmation (for sender only)
+    socket.on('message:sent', (message) => {
+      setMessages(prev => [...prev, message]);
     });
     
     // Read receipt received
@@ -314,6 +319,7 @@ export default function ChatRoom({ user, token, onLogout }) {
       socket.off('user:joined');
       socket.off('user:left');
       socket.off('message:received');
+      socket.off('message:sent');
       socket.off('message:read-receipt');
       socket.off('message:edited');
       socket.off('message:deleted');
@@ -1104,9 +1110,9 @@ export default function ChatRoom({ user, token, onLogout }) {
                           </div>
                         )}
                         
-                        {/* Action Buttons - Show on hover */}
+                        {/* Action Buttons - Show on hover and touch */}
                         {(msg._id || msg.id) && (
-                          <div className="absolute -top-8 left-0 hidden group-hover:flex gap-1 bg-gray-800 text-white shadow-lg rounded-lg px-2 py-1 text-xs z-10">
+                          <div className="absolute -top-8 left-0 flex opacity-0 group-hover:opacity-100 hover:opacity-100 transition-opacity duration-200 gap-1 bg-gray-800 text-white shadow-lg rounded-lg px-2 py-1 text-xs z-10">
                             {/* Reactions */}
                             <button
                               onClick={() => setShowReactionPicker(showReactionPicker === (msg._id || msg.id) ? null : (msg._id || msg.id))}
@@ -1285,7 +1291,11 @@ export default function ChatRoom({ user, token, onLogout }) {
               <div className="relative">
                 <button
                   type="button"
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    console.log('Emoji picker toggled:', !showEmojiPicker);
+                    setShowEmojiPicker(!showEmojiPicker);
+                  }}
                   disabled={!isConnected || uploadingFile}
                   className="bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300 font-semibold px-3 sm:px-4 py-2 sm:py-3 rounded-lg transition duration-200 transform hover:scale-[1.02] active:scale-[0.98] text-sm sm:text-base"
                   title="Add emoji"
@@ -1293,7 +1303,7 @@ export default function ChatRoom({ user, token, onLogout }) {
                   😊
                 </button>
                 {showEmojiPicker && (
-                  <div className="absolute bottom-full mb-2 right-0 z-50">
+                  <div className="absolute bottom-full mb-2 right-0 z-[9999]">
                     <Picker
                       data={data}
                       onEmojiSelect={handleEmojiSelect}
