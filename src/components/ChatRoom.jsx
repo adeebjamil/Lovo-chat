@@ -220,14 +220,16 @@ export default function ChatRoom({ user, token, onLogout }) {
 
     // Message received from others
     socket.on('message:received', (message) => {
+      console.log('📥 message:received event fired:', message.id || message._id);
       setMessages(prev => {
         // Prevent duplicates by checking if message already exists
         const messageId = message._id || message.id;
         const exists = prev.some(msg => (msg._id || msg.id) === messageId);
         if (exists) {
-          console.log('⚠️ Duplicate message:received detected, skipping:', messageId);
+          console.warn('⚠️ DUPLICATE message:received detected, skipping:', messageId);
           return prev;
         }
+        console.log('✅ Adding new message from message:received:', messageId);
         return [...prev, message];
       });
       
@@ -244,14 +246,16 @@ export default function ChatRoom({ user, token, onLogout }) {
     
     // Message sent confirmation (for sender only)
     socket.on('message:sent', (message) => {
+      console.log('📤 message:sent event fired:', message.id || message._id);
       setMessages(prev => {
         // Prevent duplicates by checking if message already exists
         const messageId = message._id || message.id;
         const exists = prev.some(msg => (msg._id || msg.id) === messageId);
         if (exists) {
-          console.log('⚠️ Duplicate message:sent detected, skipping:', messageId);
+          console.warn('⚠️ DUPLICATE message:sent detected, skipping:', messageId);
           return prev;
         }
+        console.log('✅ Adding new message from message:sent:', messageId);
         return [...prev, message];
       });
     });
