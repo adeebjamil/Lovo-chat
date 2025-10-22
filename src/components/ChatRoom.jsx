@@ -1072,7 +1072,7 @@ export default function ChatRoom({ user, token, onLogout }) {
 
                         {/* Image Preview */}
                         {msg.type === 'image' && msg.fileUrl && (
-                          <div className="mb-2">
+                          <div className="mb-2 relative group">
                             <img 
                               src={msg.fileUrl} 
                               alt={msg.fileName || 'Image'} 
@@ -1080,6 +1080,29 @@ export default function ChatRoom({ user, token, onLogout }) {
                               style={{ maxHeight: '300px' }}
                               onClick={() => window.open(msg.fileUrl, '_blank')}
                             />
+                            {/* Download Icon Overlay */}
+                            <a
+                              href={msg.fileUrl}
+                              download={msg.fileName || 'image'}
+                              className="absolute top-2 right-2 bg-black bg-opacity-50 hover:bg-opacity-70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={(e) => e.stopPropagation()}
+                              title="Download image"
+                            >
+                              <svg 
+                                xmlns="http://www.w3.org/2000/svg" 
+                                className="h-4 w-4" 
+                                fill="none" 
+                                viewBox="0 0 24 24" 
+                                stroke="currentColor"
+                              >
+                                <path 
+                                  strokeLinecap="round" 
+                                  strokeLinejoin="round" 
+                                  strokeWidth={2} 
+                                  d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" 
+                                />
+                              </svg>
+                            </a>
                           </div>
                         )}
 
