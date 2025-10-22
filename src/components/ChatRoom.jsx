@@ -220,7 +220,16 @@ export default function ChatRoom({ user, token, onLogout }) {
 
     // Message received from others
     socket.on('message:received', (message) => {
-      setMessages(prev => [...prev, message]);
+      setMessages(prev => {
+        // Prevent duplicates by checking if message already exists
+        const messageId = message._id || message.id;
+        const exists = prev.some(msg => (msg._id || msg.id) === messageId);
+        if (exists) {
+          console.log('⚠️ Duplicate message:received detected, skipping:', messageId);
+          return prev;
+        }
+        return [...prev, message];
+      });
       
       // Mark message as read if it's from someone else
       if (message.userId !== user.userId) {
@@ -235,7 +244,16 @@ export default function ChatRoom({ user, token, onLogout }) {
     
     // Message sent confirmation (for sender only)
     socket.on('message:sent', (message) => {
-      setMessages(prev => [...prev, message]);
+      setMessages(prev => {
+        // Prevent duplicates by checking if message already exists
+        const messageId = message._id || message.id;
+        const exists = prev.some(msg => (msg._id || msg.id) === messageId);
+        if (exists) {
+          console.log('⚠️ Duplicate message:sent detected, skipping:', messageId);
+          return prev;
+        }
+        return [...prev, message];
+      });
     });
     
     // Read receipt received
