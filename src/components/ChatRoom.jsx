@@ -45,6 +45,7 @@ export default function ChatRoom({ user, token, onLogout }) {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [replyingTo, setReplyingTo] = useState(null);
   const [showReactionPicker, setShowReactionPicker] = useState(null);
@@ -377,8 +378,14 @@ export default function ChatRoom({ user, token, onLogout }) {
   };
 
   // Handle send message
-  const handleSendMessage = (e) => {
+  const handleSendMessage = async (e) => {
     e.preventDefault();
+    
+    // If there's a file selected, upload it first
+    if (selectedFile) {
+      await handleFileUpload(selectedFile);
+      return;
+    }
     
     if (!inputMessage.trim() || !isConnected) return;
 
@@ -630,7 +637,29 @@ export default function ChatRoom({ user, token, onLogout }) {
   const handleFileSelect = (e) => {
     const file = e.target.files?.[0];
     if (file) {
-      handleFileUpload(file);
+      // Validate file size (10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error('File size must be less than 10MB');
+        return;
+      }
+
+      // Validate file type
+      const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+      if (!allowedTypes.includes(file.type)) {
+        toast.error('Invalid file type. Only JPG, PNG, GIF, PDF, DOC, DOCX, and TXT files are allowed.');
+        return;
+      }
+
+      // Just set the file, don't upload yet
+      setSelectedFile(file);
+      
+      // Create preview URL for images
+      if (file.type.startsWith('image/')) {
+        const previewUrl = URL.createObjectURL(file);
+        setFilePreview(previewUrl);
+      }
+      
+      toast.success(`${file.name} selected. Click Send to upload.`);
     }
   };
 
@@ -693,14 +722,26 @@ export default function ChatRoom({ user, token, onLogout }) {
       setTimeout(() => {
         setUploadingFile(false);
         setSelectedFile(null);
+        setFilePreview(null);
         setUploadProgress(0);
+        
+        // Revoke the preview URL to free memory
+        if (filePreview) {
+          URL.revokeObjectURL(filePreview);
+        }
       }, 1000);
     } catch (error) {
       console.error('Error uploading file:', error);
       toast.error('Failed to upload file. Please try again.', { id: uploadToast });
       setUploadingFile(false);
       setSelectedFile(null);
+      setFilePreview(null);
       setUploadProgress(0);
+      
+      // Revoke the preview URL
+      if (filePreview) {
+        URL.revokeObjectURL(filePreview);
+      }
     }
   };
 
@@ -1289,6 +1330,58 @@ export default function ChatRoom({ user, token, onLogout }) {
             </div>
           )}
 
+          {/* File Preview - Show before uploading */}
+          {selectedFile && !uploadingFile && (
+            <div className="px-4 py-3 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-start gap-3">
+                {/* Image Preview */}
+                {filePreview && (
+                  <div className="flex-shrink-0">
+                    <img 
+                      src={filePreview} 
+                      alt="Preview" 
+                      className="w-16 h-16 object-cover rounded border border-gray-300"
+                    />
+                  </div>
+                )}
+                
+                {/* File Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {selectedFile.name}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {(selectedFile.size / 1024).toFixed(2)} KB
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    Click Send to upload ↓
+                  </p>
+                </div>
+                
+                {/* Remove Button */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedFile(null);
+                    setFilePreview(null);
+                    if (filePreview) {
+                      URL.revokeObjectURL(filePreview);
+                    }
+                    if (fileInputRef.current) {
+                      fileInputRef.current.value = '';
+                    }
+                  }}
+                  className="flex-shrink-0 text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition"
+                  title="Remove file"
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              </div>
+            </div>
+          )}
+
           <div className="px-2 sm:px-4 py-3 sm:py-4">
             <form onSubmit={handleSendMessage} className="flex space-x-1 sm:space-x-3">
               {/* File Upload Button */}
@@ -1340,16 +1433,16 @@ export default function ChatRoom({ user, token, onLogout }) {
                 type="text"
                 value={inputMessage}
                 onChange={handleInputChange}
-                placeholder={isConnected ? (replyingTo ? `Replying to ${replyingTo.username}...` : "Type a message...") : "Connecting..."}
-                disabled={!isConnected || uploadingFile}
+                placeholder={isConnected ? (selectedFile ? "File selected - click Send to upload" : replyingTo ? `Replying to ${replyingTo.username}...` : "Type a message...") : "Connecting..."}
+                disabled={!isConnected || uploadingFile || selectedFile}
                 className="flex-1 px-3 sm:px-4 py-2 sm:py-3 text-sm sm:text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
               />
               <button
                 type="submit"
-                disabled={!isConnected || !inputMessage.trim() || uploadingFile}
+                disabled={!isConnected || (!inputMessage.trim() && !selectedFile) || uploadingFile}
                 className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-300 dark:disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-semibold px-4 sm:px-6 py-2 sm:py-3 rounded-lg transition duration-200 transform hover:scale-[1.02] active:scale-[0.98] text-sm sm:text-base"
               >
-                {replyingTo ? 'Reply' : 'Send'}
+                {selectedFile ? '📤 Upload' : replyingTo ? 'Reply' : 'Send'}
               </button>
             </form>
 
