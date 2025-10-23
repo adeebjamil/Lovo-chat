@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Icons from './Icons';
 
 export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
   const [rooms, setRooms] = useState([]);
@@ -11,6 +12,7 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
   const [joinRoomName, setJoinRoomName] = useState('');
   const [joinCode, setJoinCode] = useState('');
   const [message, setMessage] = useState(null);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     if (!socket) return;
@@ -97,80 +99,153 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
     });
   };
 
+  // Filter rooms based on search query
+  const filteredRooms = rooms.filter(room => 
+    room.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    (room.description && room.description.toLowerCase().includes(searchQuery.toLowerCase()))
+  );
+
   return (
-    <div className="w-64 bg-gray-800 text-white flex flex-col h-full">
-      {/* Header */}
-      <div className="p-4 border-b border-gray-700">
-        <h2 className="text-lg font-bold">Rooms</h2>
+    <div className="w-64 bg-white dark:bg-gray-800 border-r border-telegram-gray-200 dark:border-gray-700 flex flex-col h-full shadow-telegram">
+      {/* Header - Telegram Style with Dark Mode */}
+      <div className="px-4 py-4 border-b border-telegram-gray-200 dark:border-gray-700 bg-telegram-cyan-500 dark:bg-telegram-cyan-600">
+        <h2 className="text-lg font-semibold text-white flex items-center gap-2">
+          <Icons.Users className="w-5 h-5" />
+          Rooms
+        </h2>
       </div>
 
-      {/* Rooms List */}
-      <div className="flex-1 overflow-y-auto p-2">
-        {rooms && rooms.length > 0 ? (
-          rooms.map((room) => (
+      {/* Search Bar */}
+      <div className="px-3 py-3 border-b border-telegram-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+        <div className="relative">
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search rooms..."
+            className="w-full pl-9 pr-9 py-2 bg-telegram-gray-50 dark:bg-gray-700 border border-telegram-gray-200 dark:border-gray-600 rounded-lg text-sm text-telegram-gray-900 dark:text-gray-100 placeholder-telegram-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-telegram-cyan-500 dark:focus:ring-telegram-cyan-600 focus:border-transparent transition-all"
+          />
+          <Icons.Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-telegram-gray-400 dark:text-gray-500" />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2 top-1/2 transform -translate-y-1/2 p-1 hover:bg-telegram-gray-200 dark:hover:bg-gray-600 rounded-full transition-colors"
+            >
+              <Icons.Close className="w-3.5 h-3.5 text-telegram-gray-500 dark:text-gray-400" />
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* Rooms List with Custom Scrollbar */}
+      <div className="flex-1 overflow-y-auto p-2 scrollbar-telegram">
+        {filteredRooms && filteredRooms.length > 0 ? (
+          filteredRooms.map((room) => (
             <button
               key={room._id || room.name}
               onClick={() => handleJoinRoom(room.name)}
-              className={`w-full text-left px-3 py-2 rounded mb-1 transition ${
+              className={`w-full text-left px-3 py-3 rounded-lg mb-1 transition-all duration-200 group ${
                 currentRoom === room.name
-                  ? 'bg-blue-600 text-white'
-                  : 'hover:bg-gray-700 text-gray-300'
+                  ? 'bg-telegram-cyan-500 dark:bg-telegram-cyan-600 text-white shadow-telegram'
+                  : 'hover:bg-telegram-gray-50 dark:hover:bg-gray-700 text-telegram-gray-900 dark:text-gray-100'
               }`}
             >
-              <div className="flex items-center justify-between">
-                <span className="font-medium">#{room.name}</span>
-                <span className="text-xs text-gray-400">
+              <div className="flex items-center justify-between mb-1">
+                <span className="font-medium truncate flex items-center gap-2">
+                  {room.type === 'private' ? (
+                    <Icons.Lock className="w-3.5 h-3.5 flex-shrink-0" />
+                  ) : (
+                    <Icons.Globe className="w-3.5 h-3.5 flex-shrink-0" />
+                  )}
+                  {room.name}
+                </span>
+                <span className={`text-xs px-2 py-0.5 rounded-full ${
+                  currentRoom === room.name
+                    ? 'bg-white bg-opacity-20 text-white'
+                    : 'bg-telegram-gray-200 dark:bg-gray-700 text-telegram-gray-600 dark:text-gray-300'
+                }`}>
                   {room.members?.length || 0}
                 </span>
               </div>
-              <div className="text-xs text-gray-400 mt-1">
-                {room.type === 'private' ? '🔒 Private' : '🌐 Public'}
+              <div className={`text-xs flex items-center gap-1 ${
+                currentRoom === room.name ? 'text-white text-opacity-80' : 'text-telegram-gray-500 dark:text-gray-400'
+              }`}>
+                {room.type === 'private' ? 'Private' : 'Public'}
               </div>
             </button>
           ))
+        ) : searchQuery ? (
+          <div className="text-center text-telegram-gray-500 dark:text-gray-400 text-sm py-8">
+            <Icons.Search className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p className="font-medium mb-1">No rooms found</p>
+            <p className="text-xs">Try a different search term</p>
+          </div>
         ) : (
-          <div className="text-center text-gray-400 text-sm py-4">
-            Loading rooms...
+          <div className="text-center text-telegram-gray-500 dark:text-gray-400 text-sm py-8">
+            <Icons.Users className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p>No rooms available</p>
           </div>
         )}
       </div>
 
       {/* Message Banner */}
       {message && (
-        <div className={`mx-4 mt-4 p-3 rounded-lg text-sm ${
+        <div className={`mx-3 mb-3 p-3 rounded-lg text-sm font-medium flex items-center gap-2 ${
           message.type === 'success' 
-            ? 'bg-green-100 text-green-700' 
-            : 'bg-red-100 text-red-700'
+            ? 'bg-green-50 dark:bg-green-900 dark:bg-opacity-30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800' 
+            : 'bg-red-50 dark:bg-red-900 dark:bg-opacity-30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
         }`}>
-          {message.text}
+          {message.type === 'success' ? (
+            <Icons.Check className="w-4 h-4 flex-shrink-0" />
+          ) : (
+            <Icons.Info className="w-4 h-4 flex-shrink-0" />
+          )}
+          <span>{message.text}</span>
         </div>
       )}
 
-      {/* Action Buttons */}
-      <div className="p-4 border-t border-gray-700 space-y-2">
+      {/* Action Buttons - Telegram Style with Dark Mode */}
+      <div className="p-3 border-t border-telegram-gray-200 dark:border-gray-700 space-y-2 bg-white dark:bg-gray-800">
         <button
           onClick={() => setShowJoinModal(true)}
-          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition"
+          className="btn-telegram-outline w-full flex items-center justify-center gap-2"
         >
-          🔑 Join Room
+          <Icons.Lock className="w-4 h-4" />
+          Join Room
         </button>
         <button
           onClick={() => setShowCreateModal(true)}
-          className="w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition"
+          className="btn-telegram w-full flex items-center justify-center gap-2"
         >
-          + Create Room
+          <Icons.Plus className="w-4 h-4" />
+          Create Room
         </button>
       </div>
 
-      {/* Join Room Modal */}
+      {/* Join Room Modal - Telegram Style */}
       {showJoinModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-[95vw] sm:max-w-md mx-2 sm:mx-0">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Join Private Room</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md shadow-telegram-lg">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-telegram-gray-900 flex items-center gap-2">
+                <Icons.Lock className="w-6 h-6 text-telegram-cyan-500" />
+                Join Private Room
+              </h3>
+              <button
+                onClick={() => {
+                  setShowJoinModal(false);
+                  setJoinRoomName('');
+                  setJoinCode('');
+                }}
+                className="icon-button text-telegram-gray-500"
+              >
+                <Icons.Close className="w-5 h-5" />
+              </button>
+            </div>
             
             <form onSubmit={handleJoinWithCode} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-telegram-gray-700 mb-2">
                   Room Name
                 </label>
                 <input
@@ -178,13 +253,13 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
                   value={joinRoomName}
                   onChange={(e) => setJoinRoomName(e.target.value)}
                   placeholder="Enter room name..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800"
+                  className="input-telegram"
                   required
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-telegram-gray-700 mb-2">
                   Room Code
                 </label>
                 <input
@@ -192,13 +267,16 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value)}
                   placeholder="Enter private code..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800"
+                  className="input-telegram"
                   required
                   minLength={4}
                 />
+                <p className="text-xs text-telegram-gray-500 mt-1">
+                  Ask the room creator for the access code
+                </p>
               </div>
 
-              <div className="flex space-x-3 pt-4">
+              <div className="flex gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => {
@@ -206,15 +284,15 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
                     setJoinRoomName('');
                     setJoinCode('');
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                  className="btn-telegram-outline flex-1"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  className="btn-telegram flex-1"
                 >
-                  Join
+                  Join Room
                 </button>
               </div>
             </form>
@@ -222,15 +300,31 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
         </div>
       )}
 
-      {/* Create Room Modal */}
+      {/* Create Room Modal - Telegram Style */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-[95vw] sm:max-w-md max-h-[90vh] overflow-y-auto mx-2 sm:mx-0">
-            <h3 className="text-xl font-bold text-gray-800 mb-4">Create New Room</h3>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl p-6 w-full max-w-md max-h-[90vh] overflow-y-auto shadow-telegram-lg scrollbar-telegram">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-telegram-gray-900 flex items-center gap-2">
+                <Icons.Plus className="w-6 h-6 text-telegram-cyan-500" />
+                Create New Room
+              </h3>
+              <button
+                onClick={() => {
+                  setShowCreateModal(false);
+                  setNewRoomName('');
+                  setNewRoomDescription('');
+                  setPrivateCode('');
+                }}
+                className="icon-button text-telegram-gray-500"
+              >
+                <Icons.Close className="w-5 h-5" />
+              </button>
+            </div>
             
             <form onSubmit={handleCreateRoom} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-telegram-gray-700 mb-2">
                   Room Name
                 </label>
                 <input
@@ -238,7 +332,7 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
                   value={newRoomName}
                   onChange={(e) => setNewRoomName(e.target.value)}
                   placeholder="Enter room name..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800"
+                  className="input-telegram"
                   required
                   minLength={2}
                   maxLength={30}
@@ -246,49 +340,62 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description (optional)
+                <label className="block text-sm font-medium text-telegram-gray-700 mb-2">
+                  Description <span className="text-telegram-gray-500">(optional)</span>
                 </label>
                 <textarea
                   value={newRoomDescription}
                   onChange={(e) => setNewRoomDescription(e.target.value)}
                   placeholder="What's this room about..."
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800"
-                  rows={2}
+                  className="input-telegram resize-none"
+                  rows={3}
                   maxLength={200}
                 />
+                <p className="text-xs text-telegram-gray-500 mt-1 text-right">
+                  {newRoomDescription.length}/200
+                </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-telegram-gray-700 mb-3">
                   Room Type
                 </label>
-                <div className="flex space-x-4">
-                  <label className="flex items-center">
+                <div className="flex gap-3">
+                  <label className={`flex-1 flex items-center justify-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                    isPublic 
+                      ? 'border-telegram-cyan-500 bg-telegram-cyan-50 text-telegram-cyan-700' 
+                      : 'border-telegram-gray-300 hover:border-telegram-gray-400'
+                  }`}>
                     <input
                       type="radio"
                       checked={isPublic}
                       onChange={() => setIsPublic(true)}
-                      className="mr-2"
+                      className="sr-only"
                     />
-                    <span className="text-gray-700">Public</span>
+                    <Icons.Globe className="w-4 h-4" />
+                    <span className="font-medium">Public</span>
                   </label>
-                  <label className="flex items-center">
+                  <label className={`flex-1 flex items-center justify-center gap-2 p-3 border-2 rounded-lg cursor-pointer transition-all ${
+                    !isPublic 
+                      ? 'border-telegram-cyan-500 bg-telegram-cyan-50 text-telegram-cyan-700' 
+                      : 'border-telegram-gray-300 hover:border-telegram-gray-400'
+                  }`}>
                     <input
                       type="radio"
                       checked={!isPublic}
                       onChange={() => setIsPublic(false)}
-                      className="mr-2"
+                      className="sr-only"
                     />
-                    <span className="text-gray-700">Private</span>
+                    <Icons.Lock className="w-4 h-4" />
+                    <span className="font-medium">Private</span>
                   </label>
                 </div>
               </div>
 
               {/* Private Code Field - Only show for private rooms */}
               {!isPublic && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div className="bg-telegram-cyan-50 border border-telegram-cyan-200 rounded-lg p-4">
+                  <label className="block text-sm font-medium text-telegram-gray-700 mb-2">
                     Private Code <span className="text-red-500">*</span>
                   </label>
                   <input
@@ -296,18 +403,21 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
                     value={privateCode}
                     onChange={(e) => setPrivateCode(e.target.value)}
                     placeholder="Create a code (min 4 characters)..."
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none text-gray-800"
+                    className="input-telegram"
                     required={!isPublic}
                     minLength={4}
                     maxLength={20}
                   />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Share this code with others to let them join your room
-                  </p>
+                  <div className="flex items-start gap-2 mt-2">
+                    <Icons.Info className="w-4 h-4 text-telegram-cyan-600 flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-telegram-cyan-700">
+                      Share this code with others to let them join your private room
+                    </p>
+                  </div>
                 </div>
               )}
 
-              <div className="flex space-x-3 pt-4">
+              <div className="flex gap-3 pt-4">
                 <button
                   type="button"
                   onClick={() => {
@@ -316,15 +426,15 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
                     setNewRoomDescription('');
                     setPrivateCode('');
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition"
+                  className="btn-telegram-outline flex-1"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                  className="btn-telegram flex-1"
                 >
-                  Create
+                  Create Room
                 </button>
               </div>
             </form>

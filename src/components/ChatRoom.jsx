@@ -17,6 +17,7 @@ import ReadReceipts from './ReadReceipts';
 import MessageContextMenu from './MessageContextMenu';
 import UserProfileCard from './UserProfileCard';
 import { MessageSkeleton } from './SkeletonLoader';
+import Icons from './Icons';
 
 const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -824,56 +825,55 @@ export default function ChatRoom({ user, token, onLogout }) {
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col w-full lg:w-auto">
-        {/* Header */}
-        <header className="bg-white dark:bg-gray-800 shadow-sm border-b border-gray-200 dark:border-gray-700">
-          <div className="px-2 sm:px-4 py-3 sm:py-4 flex items-center justify-between gap-2">
+        {/* Header - Telegram Style with Dark Mode */}
+        <header className="bg-white dark:bg-gray-800 border-b border-telegram-gray-200 dark:border-gray-700 shadow-telegram">
+          <div className="px-3 sm:px-6 py-3 flex items-center justify-between gap-3">
             {/* Left Section: Mobile Menu + Room Info */}
-            <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
+            <div className="flex items-center space-x-3 sm:space-x-4 min-w-0 flex-1">
               {/* Hamburger Menu - Mobile Only */}
               <button
                 onClick={() => setIsMobileSidebarOpen(!isMobileSidebarOpen)}
-                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition flex-shrink-0"
+                className="lg:hidden icon-button"
                 aria-label="Toggle menu"
               >
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
+                <Icons.Menu className="w-6 h-6 text-telegram-gray-700" />
               </button>
               
-              <div className="text-xl sm:text-2xl flex-shrink-0">💬</div>
+              {/* Room Icon */}
+              <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-telegram-cyan-400 to-telegram-cyan-600 rounded-full flex items-center justify-center text-white shadow-telegram">
+                <Icons.Users className="w-5 h-5" />
+              </div>
+              
+              {/* Room Info */}
               <div className="min-w-0 flex-1">
-                <h1 className="text-base sm:text-xl font-bold text-gray-800 dark:text-white truncate">
-                  #{roomInfo.room}
+                <h1 className="text-base sm:text-lg font-semibold text-telegram-gray-900 dark:text-white truncate">
+                  {roomInfo.room}
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 hidden sm:block">
-                  {roomInfo.userCount} user(s) online
+                <p className="text-xs sm:text-sm text-telegram-gray-600 dark:text-gray-400 flex items-center gap-1">
+                  <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+                  {roomInfo.userCount} {roomInfo.userCount === 1 ? 'member' : 'members'}
                 </p>
               </div>
+              
+              {/* Info Button - Desktop */}
               <button
                 onClick={() => setShowRoomDetails(true)}
-                className="hidden sm:flex ml-2 px-3 py-1 text-sm bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-lg transition items-center flex-shrink-0"
-                title="View room details"
+                className="hidden sm:flex icon-button-primary"
+                title="Room details"
               >
-                ℹ️ Info
+                <Icons.Info className="w-5 h-5" />
               </button>
             </div>
             
-            {/* Right Section: Actions (Responsive) */}
-            <div className="flex items-center space-x-1 sm:space-x-4 flex-shrink-0">
-              {/* Search Bar - Hide on mobile */}
-              <div className="hidden md:block">
-                <SearchBar onSearchClick={() => setShowSearchModal(true)} />
-              </div>
-              
-              {/* Mobile Search Button */}
+            {/* Right Section: Actions */}
+            <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+              {/* Search Button */}
               <button
                 onClick={() => setShowSearchModal(true)}
-                className="md:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition"
-                title="Search messages"
+                className="icon-button-primary"
+                title="Search (Ctrl+K)"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                <Icons.Search className="w-5 h-5" />
               </button>
 
               {/* Notification Bell */}
@@ -882,64 +882,67 @@ export default function ChatRoom({ user, token, onLogout }) {
               {/* Dark Mode Toggle */}
               <button
                 onClick={toggleDarkMode}
-                className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300 transition"
+                className="icon-button-primary"
                 title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
               >
                 {isDarkMode ? (
-                  // Sun icon
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 ) : (
-                  // Moon icon
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                   </svg>
                 )}
               </button>
 
-              {/* Connection Status - Hide on small screens */}
-              <div className="hidden xl:flex items-center space-x-2">
-                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500' : 'bg-red-500'}`} />
-                <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {isConnected ? 'Connected' : 'Disconnected'}
+              {/* Connection Status - Desktop */}
+              <div className="hidden lg:flex items-center gap-2 px-3 py-1.5 bg-telegram-gray-50 dark:bg-gray-800 rounded-full">
+                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
+                <span className="text-xs font-medium text-telegram-gray-700 dark:text-gray-300">
+                  {isConnected ? 'Connected' : 'Offline'}
                 </span>
               </div>
 
-              {/* User Info - Simplified on mobile */}
-              <div className="hidden sm:flex items-center space-x-3">
+              {/* User Menu - Desktop */}
+              <div className="hidden sm:flex items-center gap-3 ml-2 pl-3 border-l border-telegram-gray-200 dark:border-gray-700">
                 <div className="text-right">
-                  <p className="text-sm font-medium text-gray-800 dark:text-white">{user.username}</p>
+                  <p className="text-sm font-medium text-telegram-gray-900 dark:text-white">{user.username}</p>
                   {user.email && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 hidden lg:block">{user.email}</p>
+                    <p className="text-xs text-telegram-gray-500 dark:text-gray-400 hidden lg:block">{user.email}</p>
                   )}
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setShowAccountSettings(true)}
-                      className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                      title="Account Settings"
-                    >
-                      ⚙️ Settings
-                    </button>
-                    <button
-                      onClick={onLogout}
-                      className="text-xs text-red-600 hover:text-red-700"
-                    >
-                      Logout
-                    </button>
-                  </div>
                 </div>
+                
+                {/* Avatar */}
                 {user.avatar ? (
                   <img 
                     src={user.avatar} 
                     alt={user.username} 
-                    className="w-10 h-10 rounded-full object-cover"
+                    className="w-9 h-9 rounded-full object-cover ring-2 ring-telegram-cyan-500"
                   />
                 ) : (
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-bold">
+                  <div className="w-9 h-9 bg-gradient-to-br from-telegram-cyan-400 to-telegram-cyan-600 rounded-full flex items-center justify-center text-white font-semibold text-sm shadow-telegram">
                     {user.username.charAt(0).toUpperCase()}
                   </div>
                 )}
+                
+                {/* Settings & Logout */}
+                <div className="flex gap-1">
+                  <button
+                    onClick={() => setShowAccountSettings(true)}
+                    className="icon-button-primary"
+                    title="Settings"
+                  >
+                    <Icons.Settings className="w-5 h-5" />
+                  </button>
+                  <button
+                    onClick={onLogout}
+                    className="icon-button text-red-500 hover:bg-red-50"
+                    title="Logout"
+                  >
+                    <Icons.Logout className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -947,17 +950,14 @@ export default function ChatRoom({ user, token, onLogout }) {
 
         {/* Connection Error Banner */}
         {connectionError && (
-          <div className="bg-red-50 border-b border-red-200 px-4 py-3">
-            <div className="max-w-7xl mx-auto">
-              <p className="text-sm text-red-700">
-                ⚠️ Connection error: {connectionError}
-              </p>
-            </div>
+          <div className="bg-red-50 border-b border-red-200 px-4 py-3 flex items-center gap-2">
+            <Icons.Info className="w-5 h-5 text-red-600 flex-shrink-0" />
+            <p className="text-sm text-red-800">⚠️ Connection error: {connectionError}</p>
           </div>
         )}
 
-        {/* Messages Container */}
-        <div className="flex-1 overflow-y-auto">
+        {/* Messages Container - Telegram Style with Dark Mode */}
+        <div className="flex-1 overflow-y-auto bg-telegram-gray-50 dark:bg-gray-900 scrollbar-telegram">
           <div className="max-w-4xl mx-auto px-4 py-6 space-y-4">
             {loadingHistory && (
               <div className="space-y-3">
@@ -970,8 +970,8 @@ export default function ChatRoom({ user, token, onLogout }) {
             {messages.map((msg) => {
               if (msg.type === 'system') {
                 return (
-                  <div key={msg.id || msg._id} className="text-center">
-                    <span className="inline-block bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 text-xs px-3 py-1 rounded-full">
+                  <div key={msg.id || msg._id} className="text-center my-4">
+                    <span className="inline-block bg-telegram-gray-200 text-telegram-gray-700 text-xs px-4 py-1.5 rounded-full font-medium shadow-telegram">
                       {msg.content}
                     </span>
                   </div>
@@ -983,7 +983,7 @@ export default function ChatRoom({ user, token, onLogout }) {
               return (
                 <div
                   key={msg.id || msg._id}
-                  className={`flex items-end gap-2 mb-3 ${isOwnMessage ? 'justify-start' : 'justify-end'}`}
+                  className={`flex items-end gap-2 mb-3 ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
                   onContextMenu={(e) => handleContextMenu(e, msg)}
                 >
                   {/* Avatar for sender (own messages) on left */}
@@ -1014,11 +1014,11 @@ export default function ChatRoom({ user, token, onLogout }) {
                   )}
                   
                   <div className={`max-w-[85%] sm:max-w-[75%] lg:max-w-[60%] group relative`}>
-                    <div className={`flex items-baseline gap-2 mb-1 text-xs ${isOwnMessage ? 'justify-start' : 'justify-end'}`}>
-                      <span className={`font-medium ${isOwnMessage ? 'text-green-600' : 'text-blue-600'}`}>
+                    <div className={`flex items-baseline gap-2 mb-1 text-xs ${isOwnMessage ? 'justify-end' : 'justify-start'}`}>
+                      <span className={`font-medium ${isOwnMessage ? 'text-telegram-cyan-700' : 'text-telegram-blue-600'}`}>
                         {isOwnMessage ? 'You' : (msg.username || msg.user?.username)}
                       </span>
-                      <span className="text-gray-400">
+                      <span className="text-telegram-gray-500">
                         {formatTime(msg.timestamp || msg.createdAt)}
                         {msg.edited && <span className="ml-1 text-[10px]">(edited)</span>}
                       </span>
@@ -1037,26 +1037,26 @@ export default function ChatRoom({ user, token, onLogout }) {
                         <div className="flex justify-end gap-2 mt-2">
                           <button
                             onClick={handleCancelEdit}
-                            className="px-3 py-1 text-xs bg-gray-200 hover:bg-gray-300 rounded-md transition"
+                            className="px-4 py-1.5 text-sm bg-telegram-gray-200 hover:bg-telegram-gray-300 text-telegram-gray-700 rounded-lg transition font-medium"
                           >
                             Cancel
                           </button>
                           <button
                             onClick={() => handleSaveEdit(msg._id || msg.id)}
-                            className="px-3 py-1 text-xs bg-blue-500 hover:bg-blue-600 text-white rounded-md transition"
+                            className="btn-telegram text-sm"
                           >
                             Save
                           </button>
                         </div>
                       </div>
                     ) : (
-                      // View Mode
+                      // View Mode - Telegram Style
                       <div
                         ref={el => messageRefs.current[msg.id || msg._id] = el}
-                        className={`rounded-2xl px-4 py-2 relative shadow-sm ${
+                        className={`rounded-2xl px-4 py-2.5 relative ${
                           isOwnMessage
-                            ? 'bg-green-500 text-white rounded-bl-none'
-                            : 'bg-blue-500 text-white rounded-br-none'
+                            ? 'bg-telegram-cyan-500 text-white rounded-tr-sm shadow-telegram'
+                            : 'bg-white text-telegram-gray-900 rounded-tl-sm shadow-telegram border border-telegram-gray-200'
                         }`}
                       >
                         {/* Reply Preview */}

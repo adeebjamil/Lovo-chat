@@ -131,7 +131,7 @@ function NotificationBell({ socket, token }) {
 
   const markAsRead = async (notificationId) => {
     try {
-      const token = localStorage.getItem('chatToken');
+      const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/notifications/${notificationId}/read`, {
         method: 'PATCH',
         headers: {
@@ -142,7 +142,7 @@ function NotificationBell({ socket, token }) {
       if (response.ok) {
         // Update local state
         setNotifications(prev =>
-          prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+          prev.map(n => n._id === notificationId ? { ...n, read: true } : n)
         );
         setUnreadCount(prev => Math.max(0, prev - 1));
       }
@@ -153,7 +153,7 @@ function NotificationBell({ socket, token }) {
 
   const markAllAsRead = async () => {
     try {
-      const token = localStorage.getItem('chatToken');
+      const token = localStorage.getItem('token');
       const response = await fetch(`${API_URL}/api/notifications/read-all`, {
         method: 'PATCH',
         headers: {
@@ -218,7 +218,7 @@ function NotificationBell({ socket, token }) {
 
   const handleNotificationClick = (notification) => {
     if (!notification.read) {
-      markAsRead(notification.id);
+      markAsRead(notification._id);
     }
 
     // Navigate to action URL if provided
@@ -268,11 +268,12 @@ function NotificationBell({ socket, token }) {
       {/* Bell Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
-        className="relative p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-full transition-colors"
+        className="icon-button-primary"
         aria-label="Notifications"
+        title="Notifications"
       >
         <svg
-          className="w-6 h-6"
+          className="w-5 h-5"
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -287,7 +288,7 @@ function NotificationBell({ socket, token }) {
 
         {/* Unread Badge */}
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white bg-red-500 rounded-full">
+          <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[20px] h-5 px-1 text-xs font-bold text-white bg-red-500 rounded-full">
             {unreadCount > 99 ? '99+' : unreadCount}
           </span>
         )}
@@ -295,14 +296,14 @@ function NotificationBell({ socket, token }) {
 
       {/* Dropdown */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-96 bg-white rounded-lg shadow-2xl z-50 max-h-[600px] flex flex-col border border-gray-200">
+        <div className="absolute right-0 mt-2 w-96 bg-white dark:bg-gray-800 rounded-lg shadow-telegram-lg z-50 max-h-[600px] flex flex-col border border-telegram-gray-200 dark:border-gray-700">
           {/* Header */}
-          <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900">Notifications</h3>
+          <div className="p-4 border-b border-telegram-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <h3 className="text-lg font-semibold text-telegram-gray-900 dark:text-white">Notifications</h3>
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+                className="text-sm text-telegram-cyan-600 hover:text-telegram-cyan-700 dark:text-telegram-cyan-400 dark:hover:text-telegram-cyan-300 font-medium"
               >
                 Mark all read
               </button>
@@ -310,28 +311,28 @@ function NotificationBell({ socket, token }) {
           </div>
 
           {/* Notification List */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 overflow-y-auto scrollbar-telegram">
             {isLoading ? (
-              <div className="p-8 text-center text-gray-500">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+              <div className="p-8 text-center text-telegram-gray-500 dark:text-gray-400">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-telegram-cyan-500 mx-auto"></div>
                 <p className="mt-2">Loading notifications...</p>
               </div>
             ) : notifications.length === 0 ? (
-              <div className="p-8 text-center text-gray-500">
-                <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="p-8 text-center text-telegram-gray-500 dark:text-gray-400">
+                <svg className="w-16 h-16 mx-auto mb-4 text-telegram-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                 </svg>
-                <p className="text-lg font-medium">No notifications</p>
+                <p className="text-lg font-medium text-telegram-gray-700 dark:text-gray-300">No notifications</p>
                 <p className="text-sm mt-1">You're all caught up!</p>
               </div>
             ) : (
-              <div className="divide-y divide-gray-100">
+              <div className="divide-y divide-telegram-gray-100 dark:divide-gray-700">
                 {notifications.map((notification) => (
                   <div
-                    key={notification.id}
+                    key={notification._id}
                     onClick={() => handleNotificationClick(notification)}
-                    className={`p-4 hover:bg-gray-50 cursor-pointer transition-colors ${
-                      !notification.read ? 'bg-blue-50' : ''
+                    className={`p-4 hover:bg-telegram-gray-50 dark:hover:bg-gray-700 cursor-pointer transition-colors ${
+                      !notification.read ? 'bg-telegram-cyan-50 dark:bg-telegram-cyan-900/20' : ''
                     }`}
                   >
                     <div className="flex items-start gap-3">
@@ -342,26 +343,26 @@ function NotificationBell({ socket, token }) {
 
                       {/* Content */}
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900">
+                        <p className="text-sm font-semibold text-telegram-gray-900 dark:text-white">
                           {notification.title}
                         </p>
-                        <p className="text-sm text-gray-600 mt-1 line-clamp-2">
+                        <p className="text-sm text-telegram-gray-600 dark:text-gray-300 mt-1 line-clamp-2">
                           {notification.message}
                         </p>
                         {notification.room && (
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-telegram-gray-500 dark:text-gray-400 mt-1">
                             in {notification.room.name}
                           </p>
                         )}
-                        <p className="text-xs text-gray-400 mt-2">
-                          {formatTimestamp(notification.timestamp)}
+                        <p className="text-xs text-telegram-gray-400 dark:text-gray-500 mt-2">
+                          {formatTimestamp(notification.createdAt || notification.timestamp)}
                         </p>
                       </div>
 
                       {/* Unread Indicator */}
                       {!notification.read && (
                         <div className="flex-shrink-0">
-                          <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                          <div className="w-2 h-2 bg-telegram-cyan-500 rounded-full"></div>
                         </div>
                       )}
                     </div>

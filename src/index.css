@@ -2,13 +2,112 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom styles for chat features */
+/* Telegram-inspired Global Styles with Dark Mode Support */
+@layer base {
+  body {
+    @apply bg-telegram-gray-50 text-telegram-gray-900;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  }
+  
+  body.dark {
+    @apply bg-gray-900 text-gray-100;
+  }
+}
+
+@layer components {
+  /* Primary Button - Telegram Style with Dark Mode */
+  .btn-telegram {
+    @apply bg-telegram-cyan-500 hover:bg-telegram-cyan-600 text-white font-medium px-4 py-2 rounded-lg transition-all duration-200 shadow-telegram hover:shadow-telegram-lg;
+  }
+  
+  .dark .btn-telegram {
+    @apply bg-telegram-cyan-600 hover:bg-telegram-cyan-700;
+  }
+
+  .btn-telegram-outline {
+    @apply border-2 border-telegram-cyan-500 text-telegram-cyan-600 hover:bg-telegram-cyan-50 font-medium px-4 py-2 rounded-lg transition-all duration-200;
+  }
+  
+  .dark .btn-telegram-outline {
+    @apply border-telegram-cyan-500 text-telegram-cyan-400 hover:bg-telegram-cyan-900 hover:bg-opacity-30;
+  }
+
+  /* Input - Telegram Style with Dark Mode */
+  .input-telegram {
+    @apply w-full px-4 py-3 bg-white border border-telegram-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-telegram-cyan-500 focus:border-transparent transition-all duration-200 text-telegram-gray-900;
+  }
+  
+  .dark .input-telegram {
+    @apply bg-gray-800 border-gray-700 text-gray-100 focus:ring-telegram-cyan-600;
+  }
+
+  /* Card - Telegram Style with Dark Mode */
+  .card-telegram {
+    @apply bg-white rounded-lg shadow-telegram border border-telegram-gray-200;
+  }
+  
+  .dark .card-telegram {
+    @apply bg-gray-800 border-gray-700;
+  }
+
+  /* Message Bubble with Dark Mode */
+  .message-sent {
+    @apply bg-telegram-cyan-500 text-white rounded-2xl rounded-tr-sm;
+  }
+  
+  .dark .message-sent {
+    @apply bg-telegram-cyan-600;
+  }
+
+  .message-received {
+    @apply bg-white text-telegram-gray-900 rounded-2xl rounded-tl-sm shadow-telegram;
+  }
+  
+  .dark .message-received {
+    @apply bg-gray-800 text-gray-100 shadow-none border border-gray-700;
+  }
+
+  /* Scrollbar - Telegram Style with Dark Mode */
+  .scrollbar-telegram::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .scrollbar-telegram::-webkit-scrollbar-track {
+    @apply bg-telegram-gray-100;
+  }
+  
+  .dark .scrollbar-telegram::-webkit-scrollbar-track {
+    @apply bg-gray-800;
+  }
+
+  .scrollbar-telegram::-webkit-scrollbar-thumb {
+    @apply bg-telegram-gray-400 rounded-full;
+  }
+  
+  .dark .scrollbar-telegram::-webkit-scrollbar-thumb {
+    @apply bg-gray-600;
+  }
+
+  .scrollbar-telegram::-webkit-scrollbar-thumb:hover {
+    @apply bg-telegram-gray-500;
+  }
+  
+  .dark .scrollbar-telegram::-webkit-scrollbar-thumb:hover {
+    @apply bg-gray-500;
+  }
+}
+
+/* Custom styles for chat features with Dark Mode */
 .mention {
-  @apply font-semibold bg-yellow-200 bg-opacity-30 px-1 rounded;
+  @apply font-semibold bg-telegram-cyan-100 text-telegram-cyan-700 px-1 rounded;
+}
+
+.dark .mention {
+  @apply bg-telegram-cyan-900 bg-opacity-30 text-telegram-cyan-400;
 }
 
 .highlight-message {
-  @apply ring-4 ring-yellow-400 ring-opacity-50;
+  @apply ring-4 ring-telegram-cyan-400 ring-opacity-50;
   animation: highlight 2s ease-in-out;
 }
 
@@ -16,3 +115,52 @@
   0%, 100% { opacity: 1; }
   50% { opacity: 0.7; }
 }
+
+/* Professional Icons Styling with Dark Mode */
+.icon-button {
+  @apply p-2 rounded-full hover:bg-telegram-gray-100 active:bg-telegram-gray-200 transition-colors duration-150 cursor-pointer;
+}
+
+.dark .icon-button {
+  @apply hover:bg-gray-700 active:bg-gray-600;
+}
+
+.icon-button-primary {
+  @apply p-2 rounded-full hover:bg-telegram-cyan-50 text-telegram-cyan-600 active:bg-telegram-cyan-100 transition-colors duration-150 cursor-pointer;
+}
+
+.dark .icon-button-primary {
+  @apply hover:bg-telegram-cyan-900 hover:bg-opacity-30 text-telegram-cyan-400 active:bg-telegram-cyan-800 active:bg-opacity-40;
+}
+
+/* Smooth Transitions */
+.transition-smooth {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Online Status Indicator */
+.status-online {
+  @apply bg-green-500 ring-2 ring-white;
+}
+
+.dark .status-online {
+  @apply ring-gray-900;
+}
+
+.status-away {
+  @apply bg-yellow-500 ring-2 ring-white;
+}
+
+.dark .status-away {
+  @apply ring-gray-900;
+}
+
+.status-offline {
+  @apply bg-telegram-gray-400 ring-2 ring-white;
+}
+
+.dark .status-offline {
+  @apply bg-gray-600 ring-gray-900;
+}
+
+
