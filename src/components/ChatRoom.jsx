@@ -35,6 +35,7 @@ export default function ChatRoom({ user, token, onLogout }) {
   const { trackUserAction } = useAnalytics();
   const [currentRoom, setCurrentRoom] = useState('general');
   const [roomInfo, setRoomInfo] = useState({ room: 'general', userCount: 0 });
+  const [roomMembers, setRoomMembers] = useState([]); // Store room members for mentions
   const [loadingHistory, setLoadingHistory] = useState(false);
   const [showRoomDetails, setShowRoomDetails] = useState(false);
   const [showAccountSettings, setShowAccountSettings] = useState(false);
@@ -126,6 +127,20 @@ export default function ChatRoom({ user, token, onLogout }) {
       
       // Load message history for this room
       loadMessageHistory(data.room);
+      
+      // Request room details to get member list for mentions
+      socket.emit('room:details', { roomName: data.room });
+    });
+
+    // Room details received (for mentions autocomplete)
+    socket.on('room:details', (details) => {
+      // Extract member usernames for mention suggestions
+      if (details.members && Array.isArray(details.members)) {
+        const memberUsernames = details.members
+          .map(m => m.username || (m.user && m.user.username))
+          .filter(Boolean);
+        setRoomMembers(memberUsernames);
+      }
     });
 
     // Room invitation received
@@ -335,6 +350,7 @@ export default function ChatRoom({ user, token, onLogout }) {
 
     return () => {
       socket.off('room:joined');
+      socket.off('room:details');
       socket.off('room:invited');
       socket.off('room:deleted');
       socket.off('room:updated');
@@ -584,19 +600,25 @@ export default function ChatRoom({ user, token, onLogout }) {
 
     // Check for @ mention
     const lastAtIndex = value.lastIndexOf('@');
-    if (lastAtIndex !== -1 && lastAtIndex === value.length - 1) {
-      // Just typed @, show all users
-      setShowMentionDropdown(true);
-      // In a real app, you'd fetch users from the room here
-      setMentionSuggestions([]);
-    } else if (lastAtIndex !== -1 && lastAtIndex < value.length - 1) {
-      const searchTerm = value.slice(lastAtIndex + 1).toLowerCase();
-      if (!searchTerm.includes(' ')) {
-        // Filter users by search term
-        const uniqueUsers = [...new Set(messages.map(m => m.username || m.user?.username))].filter(Boolean);
-        const filtered = uniqueUsers.filter(u => u.toLowerCase().startsWith(searchTerm));
-        setMentionSuggestions(filtered);
-        setShowMentionDropdown(filtered.length > 0);
+    if (lastAtIndex !== -1) {
+      const textAfterAt = value.slice(lastAtIndex + 1);
+      
+      // Check if there's no space after @
+      if (!textAfterAt.includes(' ')) {
+        const searchTerm = textAfterAt.toLowerCase();
+        
+        // Show all members when just typed @
+        if (searchTerm === '') {
+          setMentionSuggestions(roomMembers);
+          setShowMentionDropdown(roomMembers.length > 0);
+        } else {
+          // Filter members by search term (using .includes() for flexible search)
+          const filtered = roomMembers.filter(username => 
+            username.toLowerCase().includes(searchTerm)
+          );
+          setMentionSuggestions(filtered);
+          setShowMentionDropdown(filtered.length > 0);
+        }
       } else {
         setShowMentionDropdown(false);
       }
@@ -1471,12 +1493,20 @@ export default function ChatRoom({ user, token, onLogout }) {
 
             {/* Mention Dropdown */}
             {showMentionDropdown && mentionSuggestions.length > 0 && (
-              <div className="absolute bottom-full mb-2 left-16 bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto z-20">
+              <div className={`absolute bottom-full mb-2 left-16 rounded-lg shadow-lg max-h-48 overflow-y-auto z-20 min-w-[200px] ${
+                isDarkMode 
+                  ? 'bg-gray-800 border border-gray-700' 
+                  : 'bg-white border border-gray-300'
+              }`}>
                 {mentionSuggestions.map((username, index) => (
                   <button
                     key={index}
                     onClick={() => selectMention(username)}
-                    className="w-full text-left px-4 py-2 hover:bg-blue-50 transition"
+                    className={`w-full text-left px-4 py-2 transition ${
+                      isDarkMode
+                        ? 'hover:bg-gray-700 text-gray-200'
+                        : 'hover:bg-blue-50 text-gray-900'
+                    }`}
                   >
                     @{username}
                   </button>

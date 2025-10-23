@@ -11,6 +11,7 @@ export default function RoomDetails({ socket, roomName, currentUser, onClose, on
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
   const [message, setMessage] = useState(null);
+  const [loadingError, setLoadingError] = useState(null);
   
   // Edit form state
   const [editForm, setEditForm] = useState({
@@ -28,6 +29,7 @@ export default function RoomDetails({ socket, roomName, currentUser, onClose, on
     // Listen for room details
     socket.on('room:details', (details) => {
       setRoomDetails(details);
+      setLoadingError(null); // Clear any previous errors
       setEditForm({
         newName: details.name,
         description: details.description || '',
@@ -36,8 +38,13 @@ export default function RoomDetails({ socket, roomName, currentUser, onClose, on
     });
 
     socket.on('room:error', (data) => {
-      setMessage({ type: 'error', text: data.error });
-      setTimeout(() => setMessage(null), 3000);
+      // If it's an access denied error during loading, set loadingError
+      if (!roomDetails && data.error.includes('Access denied')) {
+        setLoadingError(data.error);
+      } else {
+        setMessage({ type: 'error', text: data.error });
+        setTimeout(() => setMessage(null), 3000);
+      }
     });
 
     socket.on('room:invite-sent', (data) => {
@@ -142,45 +149,100 @@ export default function RoomDetails({ socket, roomName, currentUser, onClose, on
     setShowDeleteConfirm(false);
   };
 
-  if (!roomDetails) {
+  // Show error state if access denied
+  if (loadingError) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-[95vw] sm:max-w-2xl mx-2 sm:mx-0">
-          <p className="text-gray-600">Loading room details...</p>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-md mx-2 sm:mx-0 shadow-telegram-lg">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900 dark:bg-opacity-30 flex items-center justify-center">
+              <svg className="w-8 h-8 text-red-500 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-telegram-gray-900 dark:text-white text-lg font-semibold mb-2">Access Denied</p>
+              <p className="text-telegram-gray-600 dark:text-gray-300 text-sm mb-1">{loadingError}</p>
+              <p className="text-telegram-gray-500 dark:text-gray-400 text-xs">You need to join this room first</p>
+            </div>
+            <button
+              onClick={onClose}
+              className="btn-telegram w-full"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
-  const isCreator = roomDetails.createdBy?.username === currentUser?.username;
-  const isMember = roomDetails.members?.some(m => m.username === currentUser?.username);
+  if (!roomDetails) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-8 w-full max-w-md mx-2 sm:mx-0 shadow-telegram-lg">
+          <div className="flex flex-col items-center justify-center space-y-4">
+            <div className="relative">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-telegram-gray-200 dark:border-gray-700 border-t-telegram-cyan-500"></div>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <svg className="w-8 h-8 text-telegram-cyan-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                </svg>
+              </div>
+            </div>
+            <p className="text-telegram-gray-600 dark:text-gray-300 text-lg font-medium">Loading room details...</p>
+            <p className="text-telegram-gray-400 dark:text-gray-500 text-sm">Please wait a moment</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Check if current user is the creator
+  const isCreator = roomDetails.createdBy && currentUser && 
+    (roomDetails.createdBy.username === currentUser.username || 
+     roomDetails.createdBy._id === currentUser.userId ||
+     roomDetails.createdBy._id === currentUser._id);
+  
+  const isMember = roomDetails.members?.some(m => 
+    m.username === currentUser?.username || 
+    m.userId === currentUser?.userId ||
+    m._id === currentUser?._id
+  );
+
+  console.log('🔍 Room Details Debug:', {
+    currentUser,
+    createdBy: roomDetails.createdBy,
+    isCreator,
+    isMember
+  });
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl p-4 sm:p-6 w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-0">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-6 w-full max-w-[95vw] sm:max-w-2xl max-h-[90vh] overflow-y-auto mx-2 sm:mx-0 shadow-telegram-lg scrollbar-telegram">
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h2 className="text-2xl font-bold text-gray-800">#{roomDetails.name}</h2>
-              <span className={`text-xs px-2 py-1 rounded ${
+              <h2 className="text-2xl font-bold text-telegram-gray-900 dark:text-white">#{roomDetails.name}</h2>
+              <span className={`text-xs px-2 py-1 rounded-lg ${
                 roomDetails.type === 'private' 
-                  ? 'bg-purple-100 text-purple-700' 
-                  : 'bg-green-100 text-green-700'
+                  ? 'bg-purple-100 dark:bg-purple-900 dark:bg-opacity-30 text-purple-700 dark:text-purple-400' 
+                  : 'bg-green-100 dark:bg-green-900 dark:bg-opacity-30 text-green-700 dark:text-green-400'
               }`}>
                 {roomDetails.type === 'private' ? '🔒 Private' : '🌐 Public'}
               </span>
             </div>
             {roomDetails.description && (
-              <p className="text-gray-600 text-sm">{roomDetails.description}</p>
+              <p className="text-telegram-gray-600 dark:text-gray-300 text-sm">{roomDetails.description}</p>
             )}
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-telegram-gray-500 dark:text-gray-400 mt-1">
               Created by <span className="font-medium">{roomDetails.createdBy?.username}</span>
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 text-2xl"
+            className="text-telegram-gray-400 dark:text-gray-500 hover:text-telegram-gray-600 dark:hover:text-gray-300 text-2xl transition-colors"
           >
             ×
           </button>
@@ -188,10 +250,10 @@ export default function RoomDetails({ socket, roomName, currentUser, onClose, on
 
         {/* Message */}
         {message && (
-          <div className={`mb-4 p-3 rounded-lg ${
+          <div className={`mb-4 p-3 rounded-lg font-medium ${
             message.type === 'success' 
-              ? 'bg-green-100 text-green-700' 
-              : 'bg-red-100 text-red-700'
+              ? 'bg-green-100 dark:bg-green-900 dark:bg-opacity-30 text-green-700 dark:text-green-400 border border-green-200 dark:border-green-800' 
+              : 'bg-red-100 dark:bg-red-900 dark:bg-opacity-30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-800'
           }`}>
             {message.text}
           </div>
@@ -202,13 +264,13 @@ export default function RoomDetails({ socket, roomName, currentUser, onClose, on
           <div className="flex gap-2 mb-4">
             <button
               onClick={() => setShowEditModal(true)}
-              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+              className="flex-1 px-4 py-2 bg-telegram-cyan-500 dark:bg-telegram-cyan-600 text-white rounded-lg hover:bg-telegram-cyan-600 dark:hover:bg-telegram-cyan-700 transition text-sm font-medium"
             >
               ✏️ Edit Room
             </button>
             <button
               onClick={() => setShowDeleteConfirm(true)}
-              className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition text-sm"
+              className="flex-1 px-4 py-2 bg-red-500 dark:bg-red-600 text-white rounded-lg hover:bg-red-600 dark:hover:bg-red-700 transition text-sm font-medium"
             >
               🗑️ Delete Room
             </button>
@@ -218,13 +280,13 @@ export default function RoomDetails({ socket, roomName, currentUser, onClose, on
         {/* Members Section */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-800">
+            <h3 className="text-lg font-semibold text-telegram-gray-900 dark:text-white">
               Members ({roomDetails.members?.length || 0})
             </h3>
             {(isCreator || isMember) && roomDetails.type === 'private' && (
               <button
                 onClick={() => setShowInviteModal(true)}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-sm"
+                className="px-4 py-2 bg-telegram-cyan-500 dark:bg-telegram-cyan-600 text-white rounded-lg hover:bg-telegram-cyan-600 dark:hover:bg-telegram-cyan-700 transition text-sm font-medium"
               >
                 + Invite Member
               </button>
@@ -235,7 +297,7 @@ export default function RoomDetails({ socket, roomName, currentUser, onClose, on
             {roomDetails.members?.map((member) => (
               <div
                 key={member.userId}
-                className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg"
+                className="flex items-center gap-3 p-3 bg-telegram-gray-50 dark:bg-gray-700 rounded-lg"
               >
                 {member.avatar ? (
                   <img
@@ -249,18 +311,18 @@ export default function RoomDetails({ socket, roomName, currentUser, onClose, on
                   </div>
                 )}
                 <div className="flex-1">
-                  <p className="font-medium text-gray-800">{member.displayName || member.username}</p>
-                  <p className="text-xs text-gray-500">@{member.username}</p>
+                  <p className="font-medium text-telegram-gray-900 dark:text-white">{member.displayName || member.username}</p>
+                  <p className="text-xs text-telegram-gray-500 dark:text-gray-400">@{member.username}</p>
                 </div>
-                <span className={`text-xs px-2 py-1 rounded ${
+                <span className={`text-xs px-2 py-1 rounded-lg ${
                   member.status === 'online' 
-                    ? 'bg-green-100 text-green-700' 
-                    : 'bg-gray-100 text-gray-500'
+                    ? 'bg-green-100 dark:bg-green-900 dark:bg-opacity-30 text-green-700 dark:text-green-400' 
+                    : 'bg-telegram-gray-200 dark:bg-gray-600 text-telegram-gray-600 dark:text-gray-300'
                 }`}>
                   {member.status === 'online' ? '🟢 Online' : '⚫ Offline'}
                 </span>
                 {member.username === roomDetails.createdBy?.username && (
-                  <span className="text-xs px-2 py-1 rounded bg-yellow-100 text-yellow-700">
+                  <span className="text-xs px-2 py-1 rounded-lg bg-yellow-100 dark:bg-yellow-900 dark:bg-opacity-30 text-yellow-700 dark:text-yellow-400">
                     👑 Creator
                   </span>
                 )}

@@ -31,6 +31,7 @@ function NotificationBell({ socket, token }) {
     if (!socket) return;
 
     const handleNotificationReceived = (notification) => {
+      console.log('🔔 Frontend: Notification received!', notification);
       setNotifications(prev => [notification, ...prev]);
       setUnreadCount(prev => prev + 1);
       

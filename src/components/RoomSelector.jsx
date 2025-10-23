@@ -20,6 +20,11 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
     // Request rooms list on mount
     socket.emit('rooms:list');
 
+    // Periodic refresh for unread counts (every 30 seconds)
+    const refreshInterval = setInterval(() => {
+      socket.emit('rooms:list');
+    }, 30000);
+
     // Listen for rooms updates
     socket.on('rooms:list', (roomsList) => {
       setRooms(roomsList);
@@ -56,6 +61,7 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
     });
 
     return () => {
+      clearInterval(refreshInterval);
       socket.off('rooms:list');
       socket.off('room:created');
       socket.off('room:available');
@@ -68,6 +74,8 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
     if (roomName === currentRoom) return;
     socket.emit('room:join', { room: roomName });
     onRoomChange(roomName);
+    // Request updated room list to refresh unread counts
+    setTimeout(() => socket.emit('rooms:list'), 500);
   };
 
   const handleCreateRoom = (e) => {
@@ -159,13 +167,15 @@ export default function RoomSelector({ socket, currentRoom, onRoomChange }) {
                   )}
                   {room.name}
                 </span>
-                <span className={`text-xs px-2 py-0.5 rounded-full ${
-                  currentRoom === room.name
-                    ? 'bg-white bg-opacity-20 text-white'
-                    : 'bg-telegram-gray-200 dark:bg-gray-700 text-telegram-gray-600 dark:text-gray-300'
-                }`}>
-                  {room.members?.length || 0}
-                </span>
+                {room.unreadCount > 0 && (
+                  <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                    currentRoom === room.name
+                      ? 'bg-white bg-opacity-20 text-white'
+                      : 'bg-telegram-cyan-500 dark:bg-telegram-cyan-600 text-white'
+                  }`}>
+                    {room.unreadCount > 99 ? '99+' : room.unreadCount}
+                  </span>
+                )}
               </div>
               <div className={`text-xs flex items-center gap-1 ${
                 currentRoom === room.name ? 'text-white text-opacity-80' : 'text-telegram-gray-500 dark:text-gray-400'
